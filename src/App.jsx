@@ -48,11 +48,10 @@ import AdminReviews from './pages/admin/AdminReviews'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminReports from './pages/admin/AdminReports'
 import AdminAuditLogs from './pages/admin/AdminAuditLogs'
-
 import ProtectedAdminRoute from './route/ProtectedAdminRoute'
 
 /* =========================================================
-   APP ROUTES
+   ROUTES
 ========================================================= */
 
 function AppRoutes() {
@@ -75,26 +74,10 @@ function AppRoutes() {
   const isBlockedAccountPage =
     location.pathname === '/blocked-account'
 
-  /*
-   * Determine whether the currently authenticated
-   * user is an administrator.
-   *
-   * AuthContext restores the user's role from the JWT
-   * after the page is reopened.
-   */
   const isAdmin =
     currentUser?.role === 'ADMIN'
 
-  /*
-   * IMPORTANT:
-   * Wait until authentication has finished loading
-   * before making role-based redirects.
-   *
-   * If an authenticated admin opens "/" or "/home",
-   * send them directly to the admin dashboard.
-   *
-   * Normal users will continue to use "/home".
-   */
+  /* Redirect returning admins */
   if (
     !authLoading &&
     isAdmin &&
@@ -109,15 +92,7 @@ function AppRoutes() {
     )
   }
 
-  /*
-   * IMPORTANT:
-   * If the authenticated user is blocked, force them to
-   * the blocked-account page.
-   *
-   * We don't do this while authentication is still loading,
-   * otherwise the app could briefly redirect before the user
-   * state has been restored.
-   */
+  /* Redirect blocked users */
   if (
     !authLoading &&
     currentUser &&
@@ -138,15 +113,9 @@ function AppRoutes() {
 
   return (
     <>
-      {/* =================================================
-          SCROLL
-      ================================================= */}
-
       <ScrollToTop />
 
-      {/* =================================================
-          ADMIN ROUTES
-      ================================================= */}
+      {/* ADMIN ROUTES */}
 
       {isAdminPage ? (
         <Routes location={location}>
@@ -195,9 +164,8 @@ function AppRoutes() {
           </Route>
         </Routes>
       ) : (
-        /* =================================================
-           PUBLIC ROUTES
-        ================================================= */
+
+        /* PUBLIC ROUTES */
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -222,11 +190,6 @@ function AppRoutes() {
             }}
           >
             <Routes location={location}>
-
-              {/* =================================================
-                  INTRO
-              ================================================= */}
-
               <Route
                 path="/"
                 element={
@@ -241,81 +204,45 @@ function AppRoutes() {
                 }
               />
 
-              {/* =================================================
-                  HOME
-              ================================================= */}
-
               <Route
                 path="/home"
                 element={<Home />}
               />
-
-              {/* =================================================
-                  OAUTH SUCCESS
-              ================================================= */}
 
               <Route
                 path="/oauth-success"
                 element={<OAuthSuccess />}
               />
 
-              {/* =================================================
-                  BLOCKED ACCOUNT
-              ================================================= */}
-
               <Route
                 path="/blocked-account"
                 element={<BlockedAccount />}
               />
-
-              {/* =================================================
-                  MOVIE
-              ================================================= */}
 
               <Route
                 path="/movie/:id"
                 element={<MovieDetail />}
               />
 
-              {/* =================================================
-                  TERMS
-              ================================================= */}
-
               <Route
                 path="/terms"
                 element={<TermsOfUse />}
               />
-
-              {/* =================================================
-                  PRIVACY
-              ================================================= */}
 
               <Route
                 path="/privacy"
                 element={<PrivacyPolicy />}
               />
 
-              {/* =================================================
-                  REPORT
-              ================================================= */}
-
               <Route
                 path="/report"
                 element={<ReportProblem />}
               />
 
-              {/* =================================================
-                  DONATE
-              ================================================= */}
-
               <Route
                 path="/donate"
                 element={<Donate />}
               />
-
-              {/* =================================================
-                  FALLBACK
-              ================================================= */}
 
               <Route
                 path="*"
@@ -326,15 +253,12 @@ function AppRoutes() {
                   />
                 }
               />
-
             </Routes>
           </motion.div>
         </AnimatePresence>
       )}
 
-      {/* =================================================
-          GLOBAL UI
-      ================================================= */}
+      {/* GLOBAL UI */}
 
       {!isAdminPage &&
         !isBlockedAccountPage &&
