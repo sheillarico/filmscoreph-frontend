@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || const API_BASE = "https://filmscoreph-backend-production.up.railway.app/api";
+const API_BASE = import.meta.env.VITE_API_BASE
 
 export async function getMovies(page = 0) {
   const res = await fetch(`${API_BASE}/movies?page=${page}&size=10`)
