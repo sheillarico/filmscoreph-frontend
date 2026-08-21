@@ -57,7 +57,7 @@ function ReportProblem() {
             </p>
 
             <a
-              href="http://localhost:8081/oauth2/authorization/google"
+              href="https://filmscoreph-backend-production.up.railway.app/oauth2/authorization/google"
               onClick={() =>
                 localStorage.setItem(
                   'preLoginPath',

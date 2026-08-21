@@ -369,7 +369,7 @@ function MovieDetail() {
                     </form>
                   ) : (
                     <a
-                      href="http://localhost:8081/oauth2/authorization/google"
+                      href="https://filmscoreph-backend-production.up.railway.app/oauth2/authorization/google"
                       className="inline-block mt-4 px-5 py-2 bg-red-600 hover:bg-red-500 rounded-full text-white text-sm font-medium transition-all hover:scale-105"
                     >
                       Log in to Review

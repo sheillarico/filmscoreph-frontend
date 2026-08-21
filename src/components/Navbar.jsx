@@ -30,7 +30,7 @@ function Navbar() {
             </button>
           </div>
         ) : (
-          <a href="http://localhost:8081/oauth2/authorization/google" className="text-sm bg-red-600 hover:bg-red-500 text-white rounded-full px-5 py-2 transition-colors shadow-lg shadow-red-950/50">
+          <a href="https://filmscoreph-backend-production.up.railway.app/oauth2/authorization/google" className="text-sm bg-red-600 hover:bg-red-500 text-white rounded-full px-5 py-2 transition-colors shadow-lg shadow-red-950/50">
             Continue with Google
           </a>
         )}
