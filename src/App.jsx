@@ -76,6 +76,40 @@ function AppRoutes() {
     location.pathname === '/blocked-account'
 
   /*
+   * Determine whether the currently authenticated
+   * user is an administrator.
+   *
+   * AuthContext restores the user's role from the JWT
+   * after the page is reopened.
+   */
+  const isAdmin =
+    currentUser?.role === 'ADMIN'
+
+  /*
+   * IMPORTANT:
+   * Wait until authentication has finished loading
+   * before making role-based redirects.
+   *
+   * If an authenticated admin opens "/" or "/home",
+   * send them directly to the admin dashboard.
+   *
+   * Normal users will continue to use "/home".
+   */
+  if (
+    !authLoading &&
+    isAdmin &&
+    (location.pathname === '/' ||
+      location.pathname === '/home')
+  ) {
+    return (
+      <Navigate
+        to="/admin"
+        replace
+      />
+    )
+  }
+
+  /*
    * IMPORTANT:
    * If the authenticated user is blocked, force them to
    * the blocked-account page.
