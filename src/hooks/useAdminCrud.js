@@ -6,8 +6,7 @@ import {
 
 import { useAuth } from '../context/AuthContext'
 
-const API_BASE =
-  'http://localhost:8081/api'
+const API_BASE = "https://filmscoreph-backend-production.up.railway.app/api";
 
 export function useAdminCrud(
   resourcePath

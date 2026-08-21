@@ -35,6 +35,13 @@ import AdminFilterBar from '../../components/admin/AdminFilterBar'
 import MovieFormModal from '../../components/admin/MovieFormModal'
 
 // =========================================================
+// API BASE
+// =========================================================
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE
+
+// =========================================================
 // SCOPED STYLES
 // =========================================================
 
@@ -251,7 +258,7 @@ function AdminMovies() {
         averagesResponse,
       ] = await Promise.all([
         fetch(
-          'http://localhost:8081/api/reviews/counts',
+          `${API_BASE}/reviews/counts`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -260,7 +267,7 @@ function AdminMovies() {
         ),
 
         fetch(
-          'http://localhost:8081/api/reviews/averages',
+          `${API_BASE}/reviews/averages`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

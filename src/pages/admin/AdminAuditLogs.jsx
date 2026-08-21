@@ -34,8 +34,7 @@ import ConfirmDialog from '../../components/admin/ConfirmDialog'
 
 import useAdminCrudFeedback from '../../hooks/useAdminCrudFeedback'
 
-const API_BASE =
-  'http://localhost:8081/api'
+const API_BASE = "https://filmscoreph-backend-production.up.railway.app/api";
 
 const LOGS_PER_PAGE = 10
 

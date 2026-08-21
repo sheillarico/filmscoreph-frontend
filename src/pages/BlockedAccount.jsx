@@ -13,8 +13,7 @@ import {
   useNavigate,
 } from 'react-router-dom'
 
-const API_BASE =
-  'http://localhost:8081/api'
+const API_BASE = "https://filmscoreph-backend-production.up.railway.app/api";
 
 function BlockedAccount() {
   const navigate =
