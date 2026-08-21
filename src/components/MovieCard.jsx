@@ -1,15 +1,28 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { toggleWatched } from '../services/api'
 
-function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }) {
+function MovieCard({
+  movie,
+  avgRating,
+  reviewCount,
+  isWatched,
+  onWatchedChange,
+}) {
   const { user, token } = useAuth()
+
   const [watched, setWatched] = useState(isWatched)
   const [loading, setLoading] = useState(false)
+  const [posterError, setPosterError] = useState(false)
+
+  useEffect(() => {
+    setWatched(isWatched)
+  }, [isWatched])
 
   const handleToggleWatched = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
 
     if (!user) return
 
@@ -21,7 +34,7 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
       setWatched(result.watched)
       onWatchedChange?.(movie.id, result.watched)
     } catch (err) {
-      console.error(err)
+      console.error('Failed to toggle watched:', err)
     } finally {
       setLoading(false)
     }
@@ -30,18 +43,31 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
   return (
     <div className="group relative bg-gray-950 rounded-lg overflow-hidden border border-gray-900 hover:border-red-900/50 hover:shadow-lg hover:shadow-red-950/30 transition-all duration-300">
 
+      {/* POSTER */}
       <Link to={`/movie/${movie.id}`} className="block">
+
         <div className="relative aspect-[2/3] w-full overflow-hidden bg-gray-900">
 
-          {movie.posterUrl ? (
+          {movie.posterUrl && !posterError ? (
             <img
               src={movie.posterUrl}
-              alt={movie.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              alt={`${movie.title} poster`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+              onError={() => {
+                console.error(
+                  `Failed to load poster for "${movie.title}":`,
+                  movie.posterUrl
+                )
+                setPosterError(true)
+              }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">
-              No poster
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-600 px-4 text-center">
+              <span className="text-3xl mb-2">🎬</span>
+              <span className="text-xs">
+                Poster unavailable
+              </span>
             </div>
           )}
 
@@ -52,10 +78,13 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
           )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
         </div>
 
-        <div className="p-2">
-          <h3 className="text-white font-semibold text-xs truncate leading-tight">
+        {/* MOVIE INFORMATION */}
+        <div className="p-2.5">
+
+          <h3 className="text-white font-semibold text-sm truncate leading-tight">
             {movie.title}
           </h3>
 
@@ -65,6 +94,7 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
             {movie.durationMinutes && (
               <>
                 <span>·</span>
+
                 <span>
                   {Math.floor(movie.durationMinutes / 60)}h{' '}
                   {movie.durationMinutes % 60}m
@@ -73,8 +103,10 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
             )}
           </div>
 
+          {/* RATING */}
           {avgRating > 0 ? (
-            <div className="flex items-center gap-1 mt-1">
+            <div className="flex items-center gap-1.5 mt-1">
+
               <span className="text-yellow-400 text-[11px]">
                 ★
               </span>
@@ -90,6 +122,7 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
                   : reviewCount}
                 )
               </span>
+
             </div>
           ) : (
             <p className="text-gray-600 text-[10px] mt-1">
@@ -97,21 +130,25 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
             </p>
           )}
 
+          {/* LONGER DESCRIPTION */}
           {movie.description && (
-            <p className="text-gray-500 text-[10px] mt-1.5 line-clamp-2 leading-snug">
+            <p className="text-gray-400 text-[11px] mt-2 leading-relaxed line-clamp-4">
               {movie.description}
             </p>
           )}
+
         </div>
+
       </Link>
 
-      <div className="px-2 pb-2 flex flex-col gap-1">
+      {/* ACTION BUTTONS */}
+      <div className="px-2.5 pb-2.5 flex flex-col gap-1.5">
 
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
 
           <Link
             to={`/movie/${movie.id}`}
-            className="flex-1 text-center text-[10px] font-medium bg-red-600 hover:bg-red-500 text-white rounded py-1 transition-colors"
+            className="flex-1 text-center text-[10px] font-medium bg-red-600 hover:bg-red-500 text-white rounded py-1.5 transition-colors"
           >
             Rate
           </Link>
@@ -121,12 +158,13 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
               href={movie.watchLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center text-[10px] font-medium bg-gray-800 hover:bg-gray-700 text-white rounded py-1 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1 text-center text-[10px] font-medium bg-gray-800 hover:bg-gray-700 text-white rounded py-1.5 transition-colors"
             >
               Watch
             </a>
           ) : (
-            <span className="flex-1 text-center text-[10px] font-medium bg-gray-900/40 text-gray-700 rounded py-1 cursor-not-allowed">
+            <span className="flex-1 text-center text-[10px] font-medium bg-gray-900/40 text-gray-700 rounded py-1.5 cursor-not-allowed">
               Not Available
             </span>
           )}
@@ -137,7 +175,7 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
           <button
             onClick={handleToggleWatched}
             disabled={loading}
-            className={`text-[10px] rounded py-1 transition-colors ${
+            className={`text-[10px] rounded py-1.5 transition-colors ${
               watched
                 ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                 : 'bg-transparent border border-gray-700 text-gray-400 hover:border-red-600 hover:text-white'
@@ -152,6 +190,7 @@ function MovieCard({ movie, avgRating, reviewCount, isWatched, onWatchedChange }
         )}
 
       </div>
+
     </div>
   )
 }
