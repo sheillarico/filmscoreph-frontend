@@ -1,115 +1,92 @@
-import {
-  useState,
-} from 'react'
 
-import {
-  Ban,
-  Send,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react'
+import { useState } from 'react'
+import { Ban, Send, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-import {
-  useNavigate,
-} from 'react-router-dom'
-
-const API_BASE = "https://filmscoreph-backend-production.up.railway.app/api";
+const API_BASE =
+  'https://filmscoreph-backend-production.up.railway.app/api'
 
 function BlockedAccount() {
-  const navigate =
-    useNavigate()
+  const navigate = useNavigate()
 
-  const [message, setMessage] =
-    useState('')
+  const [message, setMessage] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
 
-  const [submitting, setSubmitting] =
-    useState(false)
+  const handleSubmit = async (e) => {
+    e.preventDefault()
 
-  const [submitted, setSubmitted] =
-    useState(false)
+    const trimmedMessage = message.trim()
 
-  const [error, setError] =
-    useState('')
-
-  const handleSubmit =
-    async (e) => {
-      e.preventDefault()
-
-      const trimmedMessage =
-        message.trim()
-
-      if (!trimmedMessage) {
-        setError(
-          'Please enter a message before submitting.'
-        )
-
-        return
-      }
-
-      setSubmitting(true)
-      setError('')
-
-      try {
-        const response =
-          await fetch(
-            `${API_BASE}/reports/blocked-account`,
-            {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                'Content-Type':
-                  'application/json',
-              },
-              body: JSON.stringify({
-                message:
-                  trimmedMessage,
-              }),
-            }
-          )
-
-        const data =
-          await response
-            .json()
-            .catch(() => null)
-
-        if (!response.ok) {
-          throw new Error(
-            data?.message ||
-              data?.error ||
-              'Unable to submit your message.'
-          )
-        }
-
-        setSubmitted(true)
-        setMessage('')
-      } catch (error) {
-        console.error(
-          'Failed to submit blocked account report:',
-          error
-        )
-
-        setError(
-          error?.message ||
-            'Unable to submit your message. Please try again.'
-        )
-      } finally {
-        setSubmitting(false)
-      }
+    if (!trimmedMessage) {
+      setError('Please enter a message before submitting.')
+      return
     }
+
+    if (trimmedMessage.length > 2000) {
+      setError('Message cannot exceed 2000 characters.')
+      return
+    }
+
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/reports/blocked-account`,
+        {
+          method: 'POST',
+
+          // Include the HTTP session cookie (JSESSIONID).
+          credentials: 'include',
+
+          headers: {
+            'Content-Type': 'application/json',
+          },
+
+          body: JSON.stringify({
+            message: trimmedMessage,
+          }),
+        }
+      )
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+          data?.error ||
+          `Unable to submit your message. (HTTP ${response.status})`
+        )
+      }
+
+      setSubmitted(true)
+      setMessage('')
+    } catch (error) {
+      console.error(
+        'Failed to submit blocked account report:',
+        error
+      )
+
+      setError(
+        error?.message ||
+        'Unable to submit your message. Please try again.'
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="relative z-[100] min-h-screen bg-gray-950 flex items-center justify-center px-4 py-8">
 
       <div className="w-full max-w-sm">
 
-        {/* ==================================================
-            CARD
-        ================================================== */}
-
+        {/* CARD */}
         <div className="bg-gray-950 border border-gray-800 rounded-xl shadow-2xl overflow-hidden">
 
           {/* HEADER */}
-
           <div className="px-5 py-5 text-center border-b border-gray-800">
 
             <div className="mx-auto w-11 h-11 rounded-full bg-red-600/10 border border-red-600/20 flex items-center justify-center">
@@ -142,10 +119,7 @@ function BlockedAccount() {
 
           </div>
 
-          {/* ==================================================
-              SUBMITTED
-          ================================================== */}
-
+          {/* SUBMITTED */}
           {submitted ? (
             <div className="p-5">
 
@@ -176,9 +150,7 @@ function BlockedAccount() {
 
               <button
                 type="button"
-                onClick={() =>
-                  navigate('/')
-                }
+                onClick={() => navigate('/')}
                 className="w-full mt-4 px-4 py-2 rounded-lg border border-gray-800 text-xs text-gray-400 hover:text-white hover:bg-gray-900 transition-colors"
               >
                 Return to Home
@@ -187,19 +159,13 @@ function BlockedAccount() {
             </div>
           ) : (
 
-            /* ==================================================
-               FORM
-            ================================================== */
-
+            /* FORM */
             <form
-              onSubmit={
-                handleSubmit
-              }
+              onSubmit={handleSubmit}
               className="p-5"
             >
 
               {/* INFO */}
-
               <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3.5 mb-4">
 
                 <div className="flex gap-2.5">
@@ -218,7 +184,6 @@ function BlockedAccount() {
               </div>
 
               {/* MESSAGE */}
-
               <label className="block text-xs font-medium text-gray-400 mb-1.5">
                 Message to Administrator
               </label>
@@ -226,15 +191,10 @@ function BlockedAccount() {
               <textarea
                 value={message}
                 onChange={(e) => {
-                  setMessage(
-                    e.target.value
-                  )
-
+                  setMessage(e.target.value)
                   setError('')
                 }}
-                disabled={
-                  submitting
-                }
+                disabled={submitting}
                 rows={5}
                 maxLength={2000}
                 placeholder="Explain why you believe your account should be reviewed..."
@@ -242,11 +202,9 @@ function BlockedAccount() {
               />
 
               <div className="flex justify-end mt-1">
-
                 <span className="text-[10px] text-gray-700">
                   {message.length}/2000
                 </span>
-
               </div>
 
               {error && (
@@ -256,7 +214,6 @@ function BlockedAccount() {
               )}
 
               {/* SUBMIT */}
-
               <button
                 type="submit"
                 disabled={
