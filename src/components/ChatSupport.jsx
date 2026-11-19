@@ -2,6 +2,11 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://filmscoreph-backend-production.up.railway.app/api'
+
+// ---------------------------------------------------------------
+// FALLBACK: old keyword FAQ. Only used when the AI call fails.
+// ---------------------------------------------------------------
 const faqs = [
   {
     keywords: ['rate', 'rating', 'review', 'star', 'rate a movie', 'rate movie', 'rate this movie', 'rating a movie', 'give a rating', 'how do i rate', 'how can i rate', 'how do i review', 'how can i review', 'write a review', 'leave a review', 'review a movie'],
@@ -81,13 +86,6 @@ const friendlyReplies = {
     "Sure! Here are some things you can ask me about:",
     "Happy to help! Here's a good place to start:",
   ],
-  followUp: [
-    "Is there anything else you'd like to know?",
-    "What else would you like to know?",
-    "Is there anything else I can help you with?",
-    "Would you like to know something else about FilmScorePH?",
-    "What other question can I help you with?",
-  ],
   ending: [
     "Thank you for using the FilmScorePH Assistant! 🎬 Enjoy exploring the movies!",
     "Thanks for using the FilmScorePH Assistant! 😊 Enjoy FilmScorePH!",
@@ -131,34 +129,34 @@ function getOptionsForQuestion(question) {
   return defaultOptions
 }
 
+// Keyword-based fallback, used only if the AI request fails.
 function findAnswer(input) {
   const text = input.toLowerCase().trim()
 
   if (isMatch(text, ['hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings'])) {
-    return { text: getRandomReply(friendlyReplies.greeting), shouldAskFollowUp: true, options: defaultOptions }
+    return { text: getRandomReply(friendlyReplies.greeting), options: defaultOptions }
   }
   if (isMatch(text, ['how are you', 'how r u', 'how are u', 'how do you feel', 'are you okay', 'are you doing well'])) {
-    return { text: getRandomReply(friendlyReplies.howAreYou), shouldAskFollowUp: true, options: defaultOptions }
+    return { text: getRandomReply(friendlyReplies.howAreYou), options: defaultOptions }
   }
   if (isMatch(text, ['how can i help', 'how may i help', 'what can i help', 'what do you need help', 'how can i assist'])) {
-    return { text: getRandomReply(friendlyReplies.howCanIHelp), shouldAskFollowUp: false, options: defaultOptions }
+    return { text: getRandomReply(friendlyReplies.howCanIHelp), options: defaultOptions }
   }
   if (isMatch(text, ['no', 'none', 'nothing', 'nothing else', 'nope', 'nah', "that's all", 'thats all', 'i am good', "i'm good", 'im good', 'all good', 'no more questions', 'no more'])) {
-    return { text: getRandomReply(friendlyReplies.ending), shouldAskFollowUp: false, options: [] }
+    return { text: getRandomReply(friendlyReplies.ending), options: [] }
   }
   if (isMatch(text, ['thank you', 'thanks', 'thank u', 'ty', 'appreciate it', 'much appreciated'])) {
-    return { text: getRandomReply(friendlyReplies.thanks), shouldAskFollowUp: true, options: defaultOptions }
+    return { text: getRandomReply(friendlyReplies.thanks), options: defaultOptions }
   }
 
   for (const faq of faqs) {
     if (faq.keywords.some((keyword) => text.includes(keyword))) {
-      return { text: faq.a, shouldAskFollowUp: true, options: getOptionsForQuestion(input) }
+      return { text: faq.a, options: getOptionsForQuestion(input) }
     }
   }
 
   return {
     text: "I'm not sure about that one. Try one of the options below, or ask me about ratings, reviews, accounts, login, watchlists, donations, movie searches, or reporting a problem.",
-    shouldAskFollowUp: true,
     options: defaultOptions,
   }
 }
@@ -211,37 +209,48 @@ function ChatSupport() {
     return () => clearTimeout(resetTimerRef.current)
   }, [open])
 
-  const sendQuestion = (question) => {
+  const sendQuestion = async (question) => {
     const trimmed = question.trim()
-    if (!trimmed) return
+    if (!trimmed || typing) return
 
-    const result = findAnswer(trimmed)
-    const userMsg = { from: 'user', text: trimmed }
+    // Last 6 messages (skipping the initial greeting) give the AI context
+    const history = messages
+      .slice(1)
+      .filter(m => m.text)
+      .slice(-6)
+      .map(m => ({ role: m.from === 'user' ? 'user' : 'model', text: m.text }))
 
-    setMessages(prev => [...prev.map(m => ({ ...m, options: undefined })), userMsg])
+    setMessages(prev => [
+      ...prev.map(m => ({ ...m, options: undefined })),
+      { from: 'user', text: trimmed },
+    ])
     setInput('')
     setTyping(true)
 
-    setTimeout(() => {
-      setTyping(false)
-      setMessages(prev => [
-        ...prev,
-        { from: 'bot', text: result.text, options: result.shouldAskFollowUp ? undefined : result.options },
-      ])
+    let reply
+    let options
 
-      if (result.shouldAskFollowUp && result.options?.length > 0) {
-        setTimeout(() => {
-          setTyping(true)
-          setTimeout(() => {
-            setTyping(false)
-            setMessages(prev => [
-              ...prev,
-              { from: 'bot', text: getRandomReply(friendlyReplies.followUp), options: result.options },
-            ])
-          }, 600)
-        }, 300)
-      }
-    }, 700)
+    try {
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmed, history }),
+        signal: AbortSignal.timeout(25000),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      if (!data.reply) throw new Error('Empty reply')
+      reply = data.reply
+      options = getOptionsForQuestion(trimmed)
+    } catch (err) {
+      console.warn('AI chat failed, using keyword fallback:', err)
+      const fallback = findAnswer(trimmed)
+      reply = fallback.text
+      options = fallback.options
+    }
+
+    setTyping(false)
+    setMessages(prev => [...prev, { from: 'bot', text: reply, options }])
   }
 
   const handleSend = (e) => {
@@ -309,7 +318,7 @@ function ChatSupport() {
                     className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                      className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-line ${
                         m.from === 'user'
                           ? 'bg-red-600 text-white rounded-br-sm'
                           : 'bg-gray-900 text-gray-200 rounded-bl-sm'
@@ -350,6 +359,7 @@ function ChatSupport() {
                 type="text"
                 value={input}
                 onChange={e => setInput(e.target.value)}
+                maxLength={500}
                 placeholder="Ask a question..."
                 className="flex-1 bg-gray-900 border border-gray-800 rounded-full px-4 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-red-600"
               />
